@@ -245,11 +245,13 @@ class _QrCodeStaticScreenState extends State<QrCodeStaticScreen> {
                         onPressed: () async {
                           setState(() => clickButton = true);
                           if (_formKey.currentState!.validate()) {
-                            var pixKeyFormat;
+                            var pixKeyFormat = '';
                             if (typePixKeySelected != 'E-mail' &&
                                 typePixKeySelected != 'Outro') {
                               pixKeyFormat = pixKey.text.replaceAll(
                                   RegExp(r'[~!?@/#$%.^&*()_-\s]'), '');
+                            } else {
+                              pixKeyFormat = pixKey.text;
                             }
 
                             pixEntity.setMessage = message.text;
@@ -343,7 +345,6 @@ class _QrCodeStaticScreenState extends State<QrCodeStaticScreen> {
         pixKey.clear();
         break;
       default:
-        print('######## $type');
         textLabel = 'Chave Pix';
         textHint = '';
         maskPixKey = MaskTextInputFormatter();
