@@ -1,7 +1,10 @@
+import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app_pix/src/models/index.dart';
 
+import '../commoms/index.dart';
+import '../models/entities/pix.dart';
 import 'index.dart';
 
 class DonationPixScreen extends StatefulWidget {
@@ -10,15 +13,18 @@ class DonationPixScreen extends StatefulWidget {
 }
 
 class _DonationPixScreenState extends State<DonationPixScreen> {
+  var pixModel = PixModel();
+  var pixEntity = PixEntity();
+  var donationModel = DonationModel();
+
   var amountController = TextEditingController();
   List<double> amounts = [10.0, 30.0, 50.0];
-  List<dynamic> selectAmount = [false, false, false];
+  List<dynamic> selectValue = [false, false, false];
   String? amount = '';
   String code = '';
   int? clickedIndex;
-  bool onClicked = false;
-
-  var pixModel = PixModel();
+  bool selectAmount = false;
+  bool clickButton = false;
 
   @override
   Widget build(BuildContext context) {
@@ -71,15 +77,15 @@ class _DonationPixScreenState extends State<DonationPixScreen> {
                                   padding: const EdgeInsets.only(right: 8.0),
                                   child: GestureDetector(
                                     onTap: () {
-                                      if (onClicked) {
+                                      if (selectAmount) {
                                         setState(() {
-                                          onClicked = false;
+                                          selectAmount = false;
                                           clickedIndex = null;
                                           amount = '0.00';
                                         });
                                       } else {
                                         setState(() {
-                                          onClicked = true;
+                                          selectAmount = true;
                                           clickedIndex = index;
                                           amount =
                                               amounts[index].toStringAsFixed(2);
@@ -113,13 +119,26 @@ class _DonationPixScreenState extends State<DonationPixScreen> {
                         controller: amountController,
                         decoration: InputDecoration(
                           labelText: 'Valor',
-                          hintText: 'R\$ outro',
+                          hintText: 'R\$ 0.00',
                           contentPadding:
                               EdgeInsets.fromLTRB(10.0, 5.0, 5.0, 5.0),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(5.0),
                           ),
+                          suffixIcon: IconButton(
+                            onPressed: () => amountController.clear(),
+                            icon: Icon(
+                              Icons.cancel,
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.7),
+                            ),
+                          ),
                         ),
+                        inputFormatters: [
+                          CurrencyTextInputFormatter(
+                              locale: 'pt_BR', symbol: 'R\$'),
+                        ],
                         onChanged: (value) {
                           if (amountController.text.isNotEmpty) {
                             setState(() {
@@ -135,31 +154,49 @@ class _DonationPixScreenState extends State<DonationPixScreen> {
                         height: 45,
                         child: ElevatedButton(
                           onPressed: () async {
-                            pixModel.createCodePix(
-                                'Doação',
-                                pixModel.pixEntity.getPixKey!,
-                                pixModel.pixEntity.getName,
-                                pixModel.pixEntity.getCity,
-                                pixModel.pixEntity.getIdTransaction,
-                                amount);
+                            setState(() => clickButton = true);
 
-                            code = pixModel.generatePixStatic(pixModel)!;
+                            if (amount!.isEmpty) {
+                              setState(() => clickButton = false);
+                              Tools.snackBar(context,
+                                  'Por favor, informe o valor a ser doado.');
+                            } else {
+                              pixEntity = await pixModel.getInfoPix();
+                              pixEntity.setAmount =
+                                  Tools.formatCurrency(amount!);
 
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (BuildContext context) =>
-                                    QrCodePixScreen(
-                                  qrCode: code,
+                              code = (await pixModel.generatedPixModel(
+                                  pixEntity, true, fail: (msg) {
+                                Tools.snackBar(context, msg);
+                                setState(() => clickButton = false);
+                              }))!;
+                              await donationModel.createDonation(pixEntity);
+
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (BuildContext context) =>
+                                      QrCodePixScreen(
+                                    qrCode: code,
+                                  ),
                                 ),
-                              ),
-                            );
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
                             ),
                           ),
-                          child: Text('Gerar Qr Code'),
+                          child: clickButton
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.0,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text('Gerar Qr Code'),
                         ),
                       ),
                     ],
