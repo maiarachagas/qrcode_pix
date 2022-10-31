@@ -31,12 +31,13 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="manifest" href="/manifest.json">
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
   <meta name="theme-color" content="#ffffff">
 
   <title>QrCode Pix</title>
+  <link rel="manifest" href="/manifest.json">
+
 </head>
 <body>
   <!-- This script installs service_worker.js to provide PWA functionality to
@@ -105,6 +106,26 @@
       // Service workers not supported. Just drop the <script> tag.
       loadMainDartJs();
     }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-analytics.js";  
+  
+  // Initialize Firebase
+  const firebaseConfig = {
+      apiKey: "AIzaSyDb7NdmnFi44QqR233FFFVUMF6uk9e2QnE",
+      authDomain: "my-pix-9e10f.firebaseapp.com",
+      projectId: "my-pix-9e10f",
+      storageBucket: "my-pix-9e10f.appspot.com",
+      messagingSenderId: "429318882426",
+      appId: "1:429318882426:web:2fed97cfc5bed550f027c3",
+      measurementId: "G-GHBEL1X4T2"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  firebase.getAnalytics();
+  var storage = firebase.storage();
   </script>
 </body>
 </html>

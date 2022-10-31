@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.app_pix">
+    package="br.com.cc.app_pix">
+
+  <uses-permission android:name="android.permission.INTERNET" />
+
    <application
         android:label="QrCode Pix"
         android:icon="@mipmap/ic_launcher">
