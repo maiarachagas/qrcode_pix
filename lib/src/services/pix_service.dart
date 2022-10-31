@@ -1,49 +1,49 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:app_pix/src/models/pix_model.dart';
-import 'package:hex/hex.dart';
+import 'package:http/http.dart' as http;
+import '../models/entities/pix.dart';
 
 class PixService {
-  String? generatePixStatic(PixModel model) {
-    var payload =
-        '${model.pixEntity.getIdPayloadFormatIndicator}${model.pixEntity.getPixKey}${model.pixEntity.getIdMerchantCategoryCode}${model.pixEntity.getIdTransactionCurrency}${model.pixEntity.getAmount}${model.pixEntity.getIdCountryCode}${model.pixEntity.getName}${model.pixEntity.getCity}${model.pixEntity.getIdTransaction}${model.pixEntity.getIdCRC16}';
+  var _domain = 'services-cc.herokuapp.com';
+  var _header = {'Content-Type': 'application/json'};
 
-    var crc = crc16(payload);
-    var pix = payload + crc!;
-    print(pix);
+  Future<String> generatedPixService(
+      PixEntity pixEntity, bool isDonation) async {
+    try {
+      var code = '';
+      var idTransaction = "";
 
-    return pix;
-  }
-
-  String? crc16(String payload) {
-    var bytes = utf8.encode(payload);
-
-    // CCITT
-    const POLYNOMIAL = 0x1021;
-    // XMODEM
-    const INIT_VALUE = 0xFFFF;
-
-    final bitRange = Iterable.generate(8);
-
-    var crc = INIT_VALUE;
-    for (var byte in bytes) {
-      crc ^= (byte << 8);
-      // ignore: unused_local_variable
-      for (var i in bitRange) {
-        crc = (crc & 0x8000) != 0 ? (crc << 1) ^ POLYNOMIAL : crc << 1;
+      if (pixEntity.getIdTransaction != null ||
+          pixEntity.getIdTransaction!.isNotEmpty) {
+        if (isDonation) {
+          idTransaction = '${pixEntity.getIdTransaction}${pixEntity.getId}';
+        } else {
+          idTransaction = pixEntity.getIdTransaction!;
+        }
       }
+
+      var url = Uri.https(_domain, "/pix/");
+      var res = await http.post(url,
+          body: jsonEncode({
+            "pixKey": pixEntity.getPixKey,
+            "name": pixEntity.getName,
+            "city": pixEntity.getCity,
+            "idTransaction": idTransaction,
+            "amount": pixEntity.getAmount,
+            "message": pixEntity.getMessage ?? ""
+          }),
+          headers: _header);
+
+      if (res.statusCode == 201) {
+        var body = jsonDecode(res.body);
+
+        code = body["key"];
+        return code;
+      } else {
+        throw "Erro: ${res.body}";
+      }
+    } catch (e) {
+      print('[Pix Service]: $e');
+      rethrow;
     }
-
-    var byteData = ByteData(2)..setInt16(0, crc, Endian.little);
-    var hex = numToHex(byteData.buffer.asUint8List());
-    return hex;
-  }
-
-  String? numToHex(n) {
-    var hex = HEX.encode(n);
-    var hexFormatted = hex.substring(2) + hex.substring(0, 2);
-
-    return hexFormatted.toUpperCase();
   }
 }
